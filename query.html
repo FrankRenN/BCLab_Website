@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Test</title>
+</head>
+<body>
+    <h1>Query Test</h1>
+    <button id="fetchExperiments">Fetch Experiments</button>
+    <button id="fetchRuns">Fetch Runs</button>
+    <button id="fetchBarcode">Fetch Barcode</button>
+    <button id="fetchHardware">Fetch Hardware</button>
+    <button id="fetchLibraryPrep">Fetch Library Prep</button>
+    <button id="fetchNote">Fetch Note</button>
+    <button id="fetchOperator">Fetch Operator</button>
+    <button id="fetchParticipants">Fetch Participants</button>
+    <button id="fetchSample">Fetch Sample</button>
+    <button id="fetchSequencingUnit">Fetch Sequencing Unit</button>
+
+    <div id="output" style="margin-top: 20px; white-space: pre-wrap; font-family: monospace;"></div>
+
+    <script>
+        const fetchData = (endpoint) => {
+            const output = document.getElementById('output');
+            output.textContent = 'Loading...';
+            
+            fetch(`http://localhost:8000/${endpoint}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    output.textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    output.textContent = `Error: ${error.message}`;
+                });
+        };
+
+        document.getElementById('fetchExperiments').addEventListener('click', () => {
+            fetchData('experiment');
+        });
+
+        document.getElementById('fetchRuns').addEventListener('click', () => {
+            fetchData('run');
+        });
+
+        document.getElementById('fetchBarcode').addEventListener('click', () => {
+            fetchData('barcode');
+        });
+
+        document.getElementById('fetchHardware').addEventListener('click', () => {
+            fetchData('hardware');
+        });
+
+        document.getElementById('fetchLibraryPrep').addEventListener('click', () => {
+            fetchData('library_prep');
+        });
+
+        document.getElementById('fetchNote').addEventListener('click', () => {
+            fetchData('note');
+        });
+
+        document.getElementById('fetchOperator').addEventListener('click', () => {
+            fetchData('operator');
+        });
+
+        document.getElementById('fetchParticipants').addEventListener('click', () => {
+            fetchData('participants');
+        });
+
+        document.getElementById('fetchSample').addEventListener('click', () => {
+            fetchData('sample');
+        });
+
+        document.getElementById('fetchSequencingUnit').addEventListener('click', () => {
+            fetchData('sequencing_unit');
+        });
+    </script>
+</body>
+</html>
