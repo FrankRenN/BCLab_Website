@@ -3,82 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Query Test</title>
+    <title>Database Query with Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .pagination-controls, .table-controls {
+            margin-top: 10px;
+        }
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-controls {
+            margin-left: auto;
+        }
+        .error {
+            color: red;
+        }
+    </style>
 </head>
 <body>
-    <h1>Query Test</h1>
-    <button id="fetchExperiments">Fetch Experiments</button>
-    <button id="fetchRuns">Fetch Runs</button>
-    <button id="fetchBarcode">Fetch Barcode</button>
-    <button id="fetchHardware">Fetch Hardware</button>
-    <button id="fetchLibraryPrep">Fetch Library Prep</button>
-    <button id="fetchNote">Fetch Note</button>
-    <button id="fetchOperator">Fetch Operator</button>
-    <button id="fetchParticipants">Fetch Participants</button>
-    <button id="fetchSample">Fetch Sample</button>
-    <button id="fetchSequencingUnit">Fetch Sequencing Unit</button>
+    <h1>Database Query with Search</h1>
 
-    <div id="output" style="margin-top: 20px; white-space: pre-wrap; font-family: monospace;"></div>
+    <!-- Controls for Table Selection and Search -->
+    <div class="table-controls">
+        <div>
+            <!-- Dropdown to Select Table -->
+            <label for="tableSelect">Select Table:</label>
+            <select id="tableSelect">
+                <option value="experiment">Experiment</option>
+                <option value="run">Run</option>
+                <option value="barcode">Barcode</option>
+                <option value="run_hardware">Run Hardware</option>
+                <option value="experiment_hardware">Experiment Hardware</option>
+                <option value="library_prep">Library Prep</option>
+                <option value="note">Note</option>
+                <option value="operator">Operator</option>
+                <option value="participants">Participants</option>
+                <option value="sample">Sample</option>
+                <option value="sequencing_unit">Sequencing Unit</option>
+            </select>
+        </div>
+        <!-- Search Controls -->
+        <div class="search-controls">
+            <input type="text" id="searchInput" placeholder="Enter keyword to search">
+            <button id="searchButton">Search</button>
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-controls">
+        <button id="prevPage">Previous Page</button>
+        <span id="currentPage">Page: 1</span>
+        <button id="nextPage">Next Page</button>
+    </div>
+
+    <!-- Table Display -->
+    <div id="output"></div>
 
     <script>
-        const fetchData = (endpoint) => {
-            const output = document.getElementById('output');
-            output.textContent = 'Loading...';
-            
-            fetch(`http://localhost:8000/${endpoint}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Error: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    output.textContent = JSON.stringify(data, null, 2);
-                })
-                .catch(error => {
-                    output.textContent = `Error: ${error.message}`;
-                });
+        let currentPage = 1; // Track the current page
+        let keyword = ''; // Track the search keyword
+
+        const tableSelect = document.getElementById('tableSelect');
+        const output = document.getElementById('output');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
+        const currentPageLabel = document.getElementById('currentPage');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+
+        // Fetch data from the API and display it
+        const fetchData = async (page) => {
+            const tableName = tableSelect.value;
+            try {
+                // Fetch data from the backend API with optional search keyword
+                let url = `http://localhost:8000/api/data/${tableName}?page=${page}&limit=20`;
+                if (keyword) {
+                    url += `&search=${encodeURIComponent(keyword)}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayTable(data); // Display the data in a table
+                    currentPageLabel.textContent = `Page: ${currentPage}`;
+                } else {
+                    showError(`Error: ${JSON.stringify(data)}`);
+                }
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            }
         };
 
-        document.getElementById('fetchExperiments').addEventListener('click', () => {
-            fetchData('experiment');
+        // Display data in a table format
+        const displayTable = (data) => {
+            output.innerHTML = ''; // Clear previous content
+
+            if (!Array.isArray(data) || data.length === 0) {
+                output.innerHTML = '<p>No data available.</p>';
+                return;
+            }
+
+            // Create table
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // Add headers
+            const headerRow = document.createElement('tr');
+            Object.keys(data[0]).forEach((key) => {
+                const th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+
+            // Add rows
+            data.forEach((row) => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach((value) => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            output.appendChild(table);
+        };
+
+        // Show error messages
+        const showError = (message) => {
+            output.innerHTML = `<p class="error">${message}</p>`;
+        };
+
+        // Pagination controls
+        prevPageButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage -= 1;
+                fetchData(currentPage);
+            }
         });
 
-        document.getElementById('fetchRuns').addEventListener('click', () => {
-            fetchData('run');
+        nextPageButton.addEventListener('click', () => {
+            currentPage += 1;
+            fetchData(currentPage);
         });
 
-        document.getElementById('fetchBarcode').addEventListener('click', () => {
-            fetchData('barcode');
+        // Fetch data when table selection changes
+        tableSelect.addEventListener('change', () => {
+            currentPage = 1; // Reset to first page
+            keyword = ''; // Clear search keyword
+            searchInput.value = ''; // Clear search input
+            fetchData(currentPage);
         });
 
-        document.getElementById('fetchHardware').addEventListener('click', () => {
-            fetchData('hardware');
+        // Fetch data when search button is clicked
+        searchButton.addEventListener('click', () => {
+            keyword = searchInput.value.trim();
+            currentPage = 1; // Reset to first page for new search
+            fetchData(currentPage);
         });
 
-        document.getElementById('fetchLibraryPrep').addEventListener('click', () => {
-            fetchData('library_prep');
-        });
-
-        document.getElementById('fetchNote').addEventListener('click', () => {
-            fetchData('note');
-        });
-
-        document.getElementById('fetchOperator').addEventListener('click', () => {
-            fetchData('operator');
-        });
-
-        document.getElementById('fetchParticipants').addEventListener('click', () => {
-            fetchData('participants');
-        });
-
-        document.getElementById('fetchSample').addEventListener('click', () => {
-            fetchData('sample');
-        });
-
-        document.getElementById('fetchSequencingUnit').addEventListener('click', () => {
-            fetchData('sequencing_unit');
-        });
+        // Initial data fetch
+        fetchData(currentPage);
     </script>
 </body>
 </html>
