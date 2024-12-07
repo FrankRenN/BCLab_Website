@@ -32,7 +32,7 @@ const getColumnNames = async (tableName) => {
 };
 
 // delete data
-const deleteFromTable = async (tableName, id) => {
+const deleteData = async (tableName, id) => {
     const sql = `DELETE FROM ?? WHERE id = ?`;
 
     try {
@@ -66,12 +66,14 @@ const createExperiment = async (name, protocol, metadata, date_started, descript
     });
 };
 
+//add new computer to the list
 const addComputer = async (device_name) => {
     return await insertData('computer', {
         device_name,
     });
 };
 
+//add new minion to the list
 const addMinion = async (name, computer_used, device_date, notes) => {
     return await insertData('minion', {
         name,

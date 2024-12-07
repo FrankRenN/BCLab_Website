@@ -14,7 +14,7 @@ router.delete('/delete/:tableName/:id', validateTable, async (req, res, next) =>
     }
 
     try {
-        const result = await deleteFromTable(tableName, id);
+        const result = await deleteData(tableName, id);
 
         if (result.affectedRows > 0) {
             res.status(200).send({ success: true, message: `Deleted ID ${id} from ${tableName}` });

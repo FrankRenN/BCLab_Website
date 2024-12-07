@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query and Edit Table</title>
+</head>
+<body>
+    <h1>Query and Edit Table</h1>
+
+    <!-- Table Selection -->
+    <label for="tableSelect">Select Table:</label>
+    <select id="tableSelect">
+        <option value="experiment">Experiment</option>
+        <option value="run">Run</option>
+        <option value="computer">Computer</option>
+        <option value="minion">Minion</option>
+    </select>
+    <button id="fetchData">Fetch Data</button>
+
+    <!-- Output Table -->
+    <div id="output"></div>
+
+    <!-- Pagination -->
+    <div>
+        <button id="prevPage">Previous</button>
+        <span id="currentPage">Page: 1</span>
+        <button id="nextPage">Next</button>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid #ddd; padding: 20px; background: white; z-index: 1000;">
+        <h3>Edit Row</h3>
+        <form id="editForm">
+            <!-- Dynamic Fields -->
+            <div id="editFields"></div>
+            <button type="submit">Save Changes</button>
+            <button type="button" id="cancelEdit">Cancel</button>
+        </form>
+    </div>
+    <div id="overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/data';
+        const output = document.getElementById('output');
+        const tableSelect = document.getElementById('tableSelect');
+        const currentPageElem = document.getElementById('currentPage');
+        let currentPage = 1;
+
+        // Fetch data
+        const fetchData = async (page = 1) => {
+            const tableName = tableSelect.value;
+            try {
+                const response = await fetch(`${API_BASE_URL}/${tableName}?page=${page}`);
+                const data = await response.json();
+                if (response.ok) {
+                    displayTable(data.results || []);
+                    currentPage = page;
+                    currentPageElem.textContent = `Page: ${page}`;
+                } else {
+                    output.textContent = `Error: ${data.message}`;
+                }
+            } catch (error) {
+                output.textContent = `Error fetching data: ${error.message}`;
+            }
+        };
+
+        // Display table
+        const displayTable = (data) => {
+            output.innerHTML = '';
+            if (!Array.isArray(data) || data.length === 0) {
+                output.innerHTML = '<p>No data available.</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            // Add headers
+            const headerRow = document.createElement('tr');
+            Object.keys(data[0]).forEach((key) => {
+                const th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+            });
+            const actionTh = document.createElement('th');
+            actionTh.textContent = 'Actions';
+            headerRow.appendChild(actionTh);
+            thead.appendChild(headerRow);
+
+            // Add rows
+            data.forEach((row) => {
+                const tr = document.createElement('tr');
+                Object.keys(row).forEach((key) => {
+                    const td = document.createElement('td');
+                    td.textContent = row[key];
+                    tr.appendChild(td);
+                });
+
+                // Add Edit button
+                const actionTd = document.createElement('td');
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.addEventListener('click', () => openEditModal(row));
+                actionTd.appendChild(editButton);
+                tr.appendChild(actionTd);
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            output.appendChild(table);
+        };
+
+        // Open edit modal
+        const editModal = document.getElementById('editModal');
+        const editFields = document.getElementById('editFields');
+        const overlay = document.getElementById('overlay');
+        const cancelEdit = document.getElementById('cancelEdit');
+        let editData = {};
+
+        const openEditModal = (row) => {
+            editData = row;
+            editFields.innerHTML = '';
+            Object.keys(row).forEach((key) => {
+                const div = document.createElement('div');
+                const label = document.createElement('label');
+                label.textContent = key;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.name = key;
+                input.value = row[key];
+                div.appendChild(label);
+                div.appendChild(input);
+                editFields.appendChild(div);
+            });
+
+            editModal.style.display = 'block';
+            overlay.style.display = 'block';
+        };
+
+        // Close edit modal
+        cancelEdit.addEventListener('click', () => {
+            editModal.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+
+        // Save changes
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedFields = {};
+            const inputs = editFields.querySelectorAll('input');
+            inputs.forEach((input) => {
+                updatedFields[input.name] = input.value;
+            });
+
+            try {
+                const tableName = tableSelect.value;
+                const id = editData.id;
+                const response = await fetch(`${API_BASE_URL}/${tableName}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedFields),
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message || 'Row updated successfully');
+                    editModal.style.display = 'none';
+                    overlay.style.display = 'none';
+                    fetchData(currentPage);
+                } else {
+                    alert(`Error: ${result.message || 'Failed to update row'}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        });
+
+        // Pagination
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) fetchData(currentPage - 1);
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            fetchData(currentPage + 1);
+        });
+
+        // Fetch data on table selection
+        document.getElementById('fetchData').addEventListener('click', () => fetchData(1));
+    </script>
+</body>
+</html>
