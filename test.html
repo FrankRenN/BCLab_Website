@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Record Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        form {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test DELETE Function</h1>
+
+    <!-- Delete Form -->
+    <form id="deleteForm">
+        <label for="tableName">Table Name:</label>
+        <input type="text" id="tableName" name="tableName" required placeholder="Enter table name">
+
+        <label for="recordId">Record ID:</label>
+        <input type="number" id="recordId" name="recordId" required placeholder="Enter record ID">
+
+        <button type="submit">Delete Record</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/data'; // Replace with your actual base URL
+
+        document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get form values
+            const tableName = document.getElementById('tableName').value;
+            const recordId = document.getElementById('recordId').value;
+
+            // Reset result message
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = '';
+
+            try {
+                // Send DELETE request
+                const response = await fetch(`${API_BASE_URL}/delete/${tableName}/${recordId}`, {
+                    method: 'DELETE',
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultDiv.textContent = result.message || 'Record deleted successfully';
+                    resultDiv.style.color = 'green';
+                } else {
+                    resultDiv.textContent = result.message || 'Failed to delete record';
+                    resultDiv.style.color = 'red';
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>

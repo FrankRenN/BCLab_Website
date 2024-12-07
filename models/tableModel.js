@@ -38,5 +38,29 @@ const insertData = async (tableName, fields) => {
     }
 };
 
+const editTable = async (tableName, id, fields) => {
+    if (!fields || Object.keys(fields).length === 0) {
+        throw new Error('No fields provided for update');
+    }
+    const updates = Object.keys(fields)
+        .map((field) => `${field} = ?`)
+        .join(', ');
 
-module.exports = { queryTable, deleteFromTable, insertData};
+    const values = Object.values(fields);
+    const sql = `UPDATE ${tableName} SET ${updates} WHERE id = ?`;
+
+    try {
+        const [result] = await db.query(sql, [...values, id]);
+        return {
+            success: true,
+            affectedRows: result.affectedRows,
+            message: `${tableName} record updated successfully`,
+        };
+    } catch (error) {
+        console.error(`Error updating record in ${tableName}:`, error);
+        throw new Error(`Failed to update record in ${tableName}`);
+    }
+};
+
+
+module.exports = { queryTable, deleteFromTable, insertData, editTable};

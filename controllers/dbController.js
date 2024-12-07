@@ -1,4 +1,4 @@
-const { queryTable, deleteFromTable, insertData} = require('../models/tableModel');
+const { queryTable, deleteFromTable, insertData, editTable } = require('../models/tableModel');
 
 const db = require('../models/db');
 
@@ -32,14 +32,15 @@ const getColumnNames = async (tableName) => {
 };
 
 // delete data
-const deleteData = async (req, res, next) => {
-    const { tableName, id } = req.params;
+const deleteFromTable = async (tableName, id) => {
+    const sql = `DELETE FROM ?? WHERE id = ?`;
 
     try {
-        const result = await deleteFromTable(tableName, id);
-        res.status(200).send({ success: true, message: `Deleted ID ${id} from ${tableName}` });
-    } catch (err) {
-        next(err);
+        const [results] = await db.query(sql, [tableName, id]);
+        return results;
+    } catch (error) {
+        console.error(`SQL Error: ${error.message}`);
+        throw new Error(`Failed to delete record from ${tableName}`);
     }
 };
 
@@ -65,4 +66,25 @@ const createExperiment = async (name, protocol, metadata, date_started, descript
     });
 };
 
-module.exports = { getPaginatedData, deleteData, createRun, createExperiment};
+const addComputer = async (device_name) => {
+    return await insertData('computer', {
+        device_name,
+    });
+};
+
+const addMinion = async (name, computer_used, device_date, notes) => {
+    return await insertData('minion', {
+        name,
+        computer_used,
+        device_date,
+        notes,
+    });
+};
+
+const editRecord = async (tableName, id, fields) => {
+    return await editTable(tableName, id, fields);
+};
+
+module.exports = {
+    getPaginatedData, deleteData, createRun, createExperiment, addComputer, addMinion, editRecord
+};

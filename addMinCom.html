@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Add Computer and Minion</title>
+</head>
+<body>
+    <h1>Test Add Computer and Minion</h1>
+
+    <!-- Form for adding Computer -->
+    <section>
+        <h2>Add Computer</h2>
+        <form id="computerForm">
+            <label for="device_name">Device Name:</label>
+            <input type="text" id="device_name" name="device_name" required placeholder="Enter device name"><br><br>
+
+            <button type="submit">Add Computer</button>
+        </form>
+        <p id="computerResult"></p>
+    </section>
+
+    <!-- Form for adding Minion -->
+    <section>
+        <h2>Add Minion</h2>
+        <form id="minionForm">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required placeholder="Enter email"><br><br>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required placeholder="Enter password"><br><br>
+
+            <button type="submit">Add Minion</button>
+        </form>
+        <p id="minionResult"></p>
+    </section>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/data'; // Update if your server runs on a different URL or port
+
+        // Handle Computer Form Submission
+        document.getElementById('computerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const deviceName = document.getElementById('device_name').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/computer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_name: deviceName }),
+                });
+
+                const result = await response.json();
+                document.getElementById('computerResult').textContent = result.message || 'Success!';
+            } catch (error) {
+                document.getElementById('computerResult').textContent = 'Error adding computer';
+                console.error(error);
+            }
+        });
+
+        // Handle Minion Form Submission
+        document.getElementById('minionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/minion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const result = await response.json();
+                document.getElementById('minionResult').textContent = result.message || 'Success!';
+            } catch (error) {
+                document.getElementById('minionResult').textContent = 'Error adding minion';
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
