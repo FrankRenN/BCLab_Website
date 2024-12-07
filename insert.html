@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Add Run and Experiment</title>
+</head>
+<body>
+    <h1>Test Adding Run and Experiment</h1>
+
+    <!-- Form for adding Experiment -->
+    <section>
+        <h2>Add Experiment</h2>
+        <form id="experimentForm">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required placeholder="Enter experiment name"><br><br>
+
+            <label for="protocol">Protocol:</label>
+            <input type="text" id="protocol" name="protocol" required placeholder="Enter protocol"><br><br>
+
+            <label for="metadata">Metadata:</label>
+            <input type="text" id="metadata" name="metadata" required placeholder="Enter metadata"><br><br>
+
+            <label for="date_started">Date Started:</label>
+            <input type="date" id="date_started" name="date_started" required><br><br>
+
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" required placeholder="Enter description"></textarea><br><br>
+
+            <button type="submit">Add Experiment</button>
+        </form>
+        <p id="experimentResult"></p>
+    </section>
+
+    <!-- Form for adding Run -->
+    <section>
+        <h2>Add Run</h2>
+        <form id="runForm">
+            <label for="date_run_start">Date Run Start:</label>
+            <input type="date" id="date_run_start" name="date_run_start" required><br><br>
+
+            <label for="experiment_id">Experiment ID:</label>
+            <input type="number" id="experiment_id" name="experiment_id" required><br><br>
+
+            <label for="computer">Computer:</label>
+            <input type="text" id="computer" name="computer" required placeholder="Enter computer"><br><br>
+
+            <label for="minion">Minion:</label>
+            <input type="text" id="minion" name="minion" required placeholder="Enter minion"><br><br>
+
+            <label for="notes">Notes:</label>
+            <textarea id="notes" name="notes" required placeholder="Enter notes"></textarea><br><br>
+
+            <button type="submit">Add Run</button>
+        </form>
+        <p id="runResult"></p>
+    </section>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api/data';
+        // Replace with your API base URL
+
+        // Handle Experiment Form Submission
+        document.getElementById('experimentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                name: document.getElementById('name').value,
+                protocol: document.getElementById('protocol').value,
+                metadata: document.getElementById('metadata').value,
+                date_started: document.getElementById('date_started').value,
+                description: document.getElementById('description').value,
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/experiment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+                document.getElementById('experimentResult').textContent = result.message;
+            } catch (error) {
+                document.getElementById('experimentResult').textContent = 'Error adding experiment';
+                console.error(error);
+            }
+        });
+
+        // Handle Run Form Submission
+        document.getElementById('runForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                date_run_start: document.getElementById('date_run_start').value,
+                experiment_id: document.getElementById('experiment_id').value,
+                computer: document.getElementById('computer').value,
+                minion: document.getElementById('minion').value,
+                notes: document.getElementById('notes').value,
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+                document.getElementById('runResult').textContent = result.message;
+            } catch (error) {
+                document.getElementById('runResult').textContent = 'Error adding run';
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

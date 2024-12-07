@@ -14,17 +14,29 @@ const deleteFromTable = async (tableName, id) => {
     return results;
 };
 
-// create new run
-const insertData = async (tableName, experiment_id) => {
-    const sql = `INSERT INTO ?? (experiment_id) VALUES (?, ?)`;
+//insert data
+const insertData = async (tableName, fields) => {
+    const columns = Object.keys(fields).join(', ');
+    const placeholders = Object.keys(fields).map(() => '?').join(', ');
+    const values = Object.values(fields);
+
+    const sql = `
+        INSERT INTO ${tableName} (${columns}) 
+        VALUES (${placeholders})
+    `;
 
     try {
-        const [result] = await db.query(sql, [tableName, experiment_id]);
-        return result;
+        const [result] = await db.query(sql, values);
+        return {
+            success: true,
+            insertId: result.insertId,
+            message: `${tableName} record created successfully`,
+        };
     } catch (error) {
-        console.error('Error inserting data:', error);
-        throw error;
+        console.error(`Error creating record in ${tableName}:`, error);
+        throw new Error(`Failed to create record in ${tableName}`);
     }
 };
+
 
 module.exports = { queryTable, deleteFromTable, insertData};

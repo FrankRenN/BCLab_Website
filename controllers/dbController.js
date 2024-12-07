@@ -1,4 +1,4 @@
-const { queryTable, deleteFromTable, insertData } = require('../models/tableModel');
+const { queryTable, deleteFromTable, insertData} = require('../models/tableModel');
 
 const db = require('../models/db');
 
@@ -43,24 +43,26 @@ const deleteData = async (req, res, next) => {
     }
 };
 
-const addData = async (req, res, next) => {
-    const { tableName } = req.params; // 获取表名
-    const { experiment_id } = req.body; // 获取请求体中的 experiment_id
-
-    try {
-        await insertData(tableName, experiment_id); // 调用 tableModel 中的 insertData 函数
-        res.status(201).send({
-            success: true,
-            message: 'Data inserted successfully'
-        });
-    } catch (error) {
-        console.error('Error inserting data:', error);
-        res.status(500).send({
-            success: false,
-            message: 'Error inserting data into the database'
-        });
-    }
+//create new run
+const createRun = async (date_run_start, experiment_id, computer, minion, notes) => {
+    return await insertData('run', {
+        date_run_start,
+        experiment_id,
+        computer,
+        minion,
+        notes,
+    });
 };
 
+//create new experiment
+const createExperiment = async (name, protocol, metadata, date_started, description) => {
+    return await insertData('experiment', {
+        name,
+        protocol,
+        metadata,
+        date_started,
+        description,
+    });
+};
 
-module.exports = { getPaginatedData, deleteData, addData};
+module.exports = { getPaginatedData, deleteData, createRun, createExperiment};

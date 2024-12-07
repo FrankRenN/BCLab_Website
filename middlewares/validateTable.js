@@ -1,8 +1,8 @@
 // white list for tables
 const allowedTables = [
-    'experiment', 'run', 'barcode', 'run_hardware',
-    'experiment_hardware', 'library_prep', 'note',
-    'operator', 'participants', 'sample', 'sequencing_unit'
+    'experiment', 'run', 'barcode', 'user',
+    'computer', 'library_prep', 'minion',
+    'operator', 'participant', 'sample', 'sequencing_unit'
 ];
 
 const validateTable = (req, res, next) => {
