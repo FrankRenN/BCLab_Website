@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Experiments</h1>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        // Fetch and display experiment list
+        const fetchExperiments = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/data/experiment');
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayTable(data);
+                } else {
+                    showError('Failed to load experiments');
+                }
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            }
+        };
+
+        // Display experiments in a table
+        const displayTable = (data) => {
+            output.innerHTML = '';
+
+            if (!Array.isArray(data) || data.length === 0) {
+                output.innerHTML = '<p>No experiments found.</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            const headerRow = document.createElement('tr');
+            ['ID', 'Name', 'Action'].forEach((header) => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+
+            data.forEach((row) => {
+                const tr = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.textContent = row.id;
+                tr.appendChild(idCell);
+
+                const nameCell = document.createElement('td');
+                nameCell.textContent = row.name;
+                tr.appendChild(nameCell);
+
+                const actionCell = document.createElement('td');
+                const viewButton = document.createElement('button');
+                viewButton.textContent = 'View Runs';
+                viewButton.onclick = () => window.location.href = `run.html?experimentId=${row.id}`;
+                actionCell.appendChild(viewButton);
+
+                tr.appendChild(actionCell);
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            output.appendChild(table);
+        };
+
+        // Show error message
+        const showError = (message) => {
+            output.innerHTML = `<p class="error">${message}</p>`;
+        };
+
+        // Initial fetch
+        fetchExperiments();
+    </script>
+</body>
+
+</html>

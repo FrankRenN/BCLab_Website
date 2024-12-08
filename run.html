@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runs for Experiment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Runs for Experiment</h1>
+    <h2 id="experimentHeader"></h2>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        const experimentHeader = document.getElementById('experimentHeader');
+
+        // Extract experiment ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const experimentId = urlParams.get('experimentId');
+
+        if (experimentId) {
+            experimentHeader.textContent = `Experiment ID: ${experimentId}`;
+            fetchRuns(experimentId);
+        } else {
+            experimentHeader.textContent = 'No Experiment ID Found';
+        }
+
+        // Fetch and display runs matching the experiment ID
+        async function fetchRuns(experimentId) {
+            try {
+                const response = await fetch('http://localhost:8000/api/data/run');
+                const allRuns = await response.json();
+
+                if (response.ok) {
+                    const filteredRuns = allRuns.filter(run => run.experiment_id == experimentId);
+                    displayRuns(filteredRuns);
+                } else {
+                    showError('Failed to load runs');
+                }
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            }
+        }
+
+        // Display runs in a table
+        function displayRuns(data) {
+            output.innerHTML = '';
+
+            if (!Array.isArray(data) || data.length === 0) {
+                output.innerHTML = '<p>No runs found for this experiment.</p>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            const headerRow = document.createElement('tr');
+            ['Run ID', 'Start Date', 'Computer', 'Minion', 'Notes'].forEach((header) => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+
+            data.forEach((row) => {
+                const tr = document.createElement('tr');
+
+                // Dynamically create table rows
+                ['id', 'date_run_start', 'computer', 'minion', 'notes'].forEach((key) => {
+                    const td = document.createElement('td');
+                    td.textContent = row[key];
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            output.appendChild(table);
+        }
+
+        // Show error message
+        function showError(message) {
+            output.innerHTML = `<p class="error">${message}</p>`;
+        }
+    </script>
+</body>
+
+</html>

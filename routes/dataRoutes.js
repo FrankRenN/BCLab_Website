@@ -7,7 +7,8 @@ const redis = require('redis');
 const client = redis.createClient();
 const {
     getPaginatedData, deleteData, createRun, createExperiment, addComputer, addMinion, editRecord,
-    createUser, findUserByEmail} = require('../controllers/dbController');
+    createUser, findUserByEmail, getColumns, addParticipant, addSample
+} = require('../controllers/dbController');
 
 const router = express.Router();
 
@@ -117,6 +118,9 @@ router.post('/login', async (req, res, next) => {
 // query by pages
 router.get('/:tableName', validateTable, getPaginatedData);
 
+//get column names for search bar
+router.get('/columns/:tableName', validateTable, getColumns);
+
 // delete by id
 router.delete('/delete/:tableName/:id', validateTable, async (req, res, next) => {
     const { tableName, id } = req.params;
@@ -139,52 +143,97 @@ router.delete('/delete/:tableName/:id', validateTable, async (req, res, next) =>
     }
 });
 
-// create router for run
+// General function for data creation
+const createData = async (req, res, next, createFunction, requiredFields, resourceName) => {
+    const data = req.body;
+
+    // Check if all required fields are provided
+    const missingFields = requiredFields.filter(field => !data[field]);
+
+    if (missingFields.length > 0) {
+        return res.status(400).send({
+            success: false,
+            message: `Missing required fields: ${missingFields.join(', ')}`,
+        });
+    }
+
+    try {
+        const result = await createFunction(...requiredFields.map(field => data[field]));
+        res.status(201).send({
+            success: true,
+            message: `${resourceName} created successfully`,
+            data: result,
+        });
+    } catch (error) {
+        console.error(`Error creating ${resourceName}:`, error.message);
+        next(error);
+    }
+};
+
+
+// Route for creating a run
 router.post('/run', async (req, res, next) => {
-    try {
-        const { date_run_start, experiment_id, computer, minion, notes } = req.body;
-        const result = await createRun(date_run_start, experiment_id, computer, minion, notes);
-        res.status(201).send(result);
-    } catch (error) {
-        next(error);
-    }
+    await createData(
+        req, res, next, 
+        createRun, 
+        ['date_run_start', 'experiment_id', 'computer', 'minion', 'notes'], 
+        'Run'
+    );
 });
 
-// create router for experiment
+// Route for creating an experiment
 router.post('/experiment', async (req, res, next) => {
-    try {
-        const { name, protocol, metadata, date_started, description } = req.body;
-        const result = await createExperiment(name, protocol, metadata, date_started, description);
-        res.status(201).send(result);
-    } catch (error) {
-        next(error);
-    }
+    await createData(
+        req, res, next, 
+        createExperiment, 
+        ['name', 'protocol', 'metadata', 'date_started', 'description'], 
+        'Experiment'
+    );
 });
 
-// create router for computer
+// Route for creating a computer
 router.post('/computer', async (req, res, next) => {
-    try {
-        const { device_name } = req.body;
-        const result = await addComputer(device_name);
-        res.status(201).send(result);
-    } catch (error) {
-        console.error('Error adding computer:', error);
-        next(error);
-    }
+    await createData(
+        req, res, next, 
+        addComputer, 
+        ['device_name'], 
+        'Computer'
+    );
 });
 
-// create router for minion
+// Route for creating a minion
 router.post('/minion', async (req, res, next) => {
-    try {
-        const { name, computer_used, device_date, notes } = req.body;
-        const result = await addMinion(name, computer_used, device_date, notes);
-        res.status(201).send(result);
-    } catch (error) {
-        console.error('Error in POST /minion:', error);
-        next(error);
-    }
+    await createData(
+        req, res, next, 
+        addMinion, 
+        ['name', 'computer_used', 'device_date', 'notes'], 
+        'Minion'
+    );
 });
 
+// Route for adding a participant
+router.post('/participants', async (req, res, next) => {
+    await createData(
+        req, res, next, 
+        addParticipant, 
+        ['name', 'experiment_id'], 
+        'Participant'
+    );
+});
+
+// Route for adding a sample
+router.post('/samples', async (req, res, next) => {
+    await createData(
+        req, res, next, 
+        addSample, 
+        ['name', 'code', 'experiment_id'], 
+        'Sample'
+    );
+});
+
+
+
+// create router for editing
 router.put('/:tableName/:id', validateTable, async (req, res, next) => {
     try {
         const { tableName, id } = req.params;

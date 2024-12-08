@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,42 +10,50 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
+
         th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
+
         th {
             background-color: #f4f4f4;
         }
+
         .pagination-controls, .table-controls {
             margin-top: 10px;
         }
+
         .table-controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+
         .search-controls {
-            margin-left: auto;
+            display: flex;
+            gap: 10px;
         }
+
         .error {
             color: red;
         }
     </style>
 </head>
+
 <body>
     <h1>Database Query with Search</h1>
 
-    <!-- Controls for Table Selection and Search -->
+    <!-- Table Selection and Search Controls -->
     <div class="table-controls">
         <div>
-            <!-- Dropdown to Select Table -->
             <label for="tableSelect">Select Table:</label>
             <select id="tableSelect">
                 <option value="experiment">Experiment</option>
@@ -60,9 +69,15 @@
                 <option value="sequencing_unit">Sequencing Unit</option>
             </select>
         </div>
+
         <!-- Search Controls -->
         <div class="search-controls">
-            <input type="text" id="searchInput" placeholder="Enter keyword to search">
+            <label for="columnSelect">Select Column:</label>
+            <select id="columnSelect">
+                <option value="default">All Columns</option>
+            </select>
+
+            <input type="text" id="searchInput" placeholder="Enter search keyword">
             <button id="searchButton">Search</button>
         </div>
     </div>
@@ -78,32 +93,36 @@
     <div id="output"></div>
 
     <script>
-        let currentPage = 1; // Track the current page
-        let keyword = ''; // Track the search keyword
+        let currentPage = 1;
+        let keyword = '';
 
         const tableSelect = document.getElementById('tableSelect');
-        const output = document.getElementById('output');
+        const columnSelect = document.getElementById('columnSelect');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
         const prevPageButton = document.getElementById('prevPage');
         const nextPageButton = document.getElementById('nextPage');
         const currentPageLabel = document.getElementById('currentPage');
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
+        const output = document.getElementById('output');
 
-        // Fetch data from the API and display it
+        // Fetch data from API and display it
         const fetchData = async (page) => {
             const tableName = tableSelect.value;
-            try {
-                // Fetch data from the backend API with optional search keyword
-                let url = `http://localhost:8000/api/data/${tableName}?page=${page}&limit=20`;
-                if (keyword) {
-                    url += `&search=${encodeURIComponent(keyword)}`;
-                }
+            const columnName = columnSelect.value;
+            let url = `http://localhost:8000/api/data/${tableName}?page=${page}&limit=20`;
 
+            if (keyword) {
+                url += columnName !== 'default'
+                    ? `&searchColumn=${encodeURIComponent(columnName)}&search=${encodeURIComponent(keyword)}`
+                    : `&search=${encodeURIComponent(keyword)}`;
+            }
+
+            try {
                 const response = await fetch(url);
                 const data = await response.json();
 
                 if (response.ok) {
-                    displayTable(data); // Display the data in a table
+                    displayTable(data);
                     currentPageLabel.textContent = `Page: ${currentPage}`;
                 } else {
                     showError(`Error: ${JSON.stringify(data)}`);
@@ -113,21 +132,46 @@
             }
         };
 
-        // Display data in a table format
+        // Update columns in columnSelect based on selected table
+        const updateColumnOptions = async () => {
+            const tableName = tableSelect.value;
+            columnSelect.innerHTML = '<option value="default">All Columns</option>';
+
+            try {
+                const response = await fetch(`http://localhost:8000/api/data/columns/${tableName}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const columns = await response.json();
+                if (Array.isArray(columns) && columns.length > 0) {
+                    columns.forEach((col) => {
+                        const option = document.createElement('option');
+                        option.value = col;
+                        option.textContent = col;
+                        columnSelect.appendChild(option);
+                    });
+                } else {
+                    showError("No columns found for this table.");
+                }
+            } catch (error) {
+                showError(`Unable to load columns: ${error.message}`);
+            }
+        };
+
+        // Display data in table format
         const displayTable = (data) => {
-            output.innerHTML = ''; // Clear previous content
+            output.innerHTML = '';
 
             if (!Array.isArray(data) || data.length === 0) {
                 output.innerHTML = '<p>No data available.</p>';
                 return;
             }
 
-            // Create table
             const table = document.createElement('table');
             const thead = document.createElement('thead');
             const tbody = document.createElement('tbody');
 
-            // Add headers
             const headerRow = document.createElement('tr');
             Object.keys(data[0]).forEach((key) => {
                 const th = document.createElement('th');
@@ -136,7 +180,6 @@
             });
             thead.appendChild(headerRow);
 
-            // Add rows
             data.forEach((row) => {
                 const tr = document.createElement('tr');
                 Object.values(row).forEach((value) => {
@@ -170,23 +213,26 @@
             fetchData(currentPage);
         });
 
-        // Fetch data when table selection changes
-        tableSelect.addEventListener('change', () => {
-            currentPage = 1; // Reset to first page
-            keyword = ''; // Clear search keyword
-            searchInput.value = ''; // Clear search input
+        // Update data when table selection changes
+        tableSelect.addEventListener('change', async () => {
+            currentPage = 1;
+            keyword = '';
+            searchInput.value = '';
+            await updateColumnOptions();
             fetchData(currentPage);
         });
 
         // Fetch data when search button is clicked
         searchButton.addEventListener('click', () => {
             keyword = searchInput.value.trim();
-            currentPage = 1; // Reset to first page for new search
+            currentPage = 1;
             fetchData(currentPage);
         });
 
         // Initial data fetch
+        updateColumnOptions();
         fetchData(currentPage);
     </script>
 </body>
+
 </html>

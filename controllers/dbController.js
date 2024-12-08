@@ -28,23 +28,43 @@ const getPaginatedData = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const search = req.query.search ? `%${req.query.search}%` : null;
+    const searchColumn = req.query.searchColumn || null;
 
     try {
         let sql = `SELECT * FROM ?? LIMIT ? OFFSET ?`;
         let params = [tableName, limit, offset];
 
-        if (search) {
-            sql = `SELECT * FROM ?? WHERE CONCAT_WS(' ', ${await getColumnNames(tableName)}) LIKE ? LIMIT ? OFFSET ?`;
+        if (search && searchColumn && searchColumn !== 'default') {
+            sql = `SELECT * FROM ?? WHERE ?? LIKE ? LIMIT ? OFFSET ?`;
+            params = [tableName, searchColumn, search, limit, offset];
+        } else if (search) {
+            sql = `SELECT * FROM ?? WHERE CONCAT_WS(' ', ${await getColumnNamesOnly(tableName)}) LIKE ? LIMIT ? OFFSET ?`;
             params = [tableName, search, limit, offset];
         }
 
         const [data] = await db.query(sql, params);
         res.status(200).send(data);
     } catch (err) {
-        next(err);
+        console.error("Error querying paginated data:", err.message);
+        res.status(500).send({ error: "Failed to query", message: err.message });
     }
 };
 
+// get column names for search bar
+const getColumns = async (req, res, next) => {
+    const { tableName } = req.params;
+    try {
+        const [columns] = await db.query(`SHOW COLUMNS FROM ??`, [tableName]);
+        const columnNames = columns.map((col) => col.Field);
+        res.status(200).send(columnNames); 
+    } catch (error) {
+        console.error(`Error fetching columns for ${tableName}: ${error.message}`);
+        res.status(500).send({ error: 'Failed to get column names' });
+    }
+};
+
+
+// get column names show them on page
 const getColumnNames = async (tableName) => {
     const [columns] = await db.query(`SHOW COLUMNS FROM ??`, [tableName]);
     return columns.map(col => col.Field).join(', ');
@@ -102,11 +122,30 @@ const addMinion = async (name, computer_used, device_date, notes) => {
     });
 };
 
+//add new participants
+const addParticipant = async (name) => {
+    return await insertData('participant', {
+        name,
+        experiment_id,
+    });
+};
+
+//add new samples
+const addSample = async (name, code) => {
+    return await insertData('sample', {
+        name,
+        code,
+        experiment_id,
+    });
+};
+
+//edit table record
 const editRecord = async (tableName, id, fields) => {
     return await editTable(tableName, id, fields);
 };
 
+
 module.exports = {
     getPaginatedData, deleteData, createRun, createExperiment, addComputer, addMinion, editRecord,
-    createUser, findUserByEmail
+    createUser, findUserByEmail, getColumns, addParticipant, addSample
 };

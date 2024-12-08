@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Add Participant & Sample</title>
+</head>
+<body>
+    <h1>Test Add Participant & Sample</h1>
+
+    <!-- Add Participant Form -->
+    <h2>Add Participant</h2>
+    <form id="addParticipantForm">
+        <label for="participantName">Participant Name:</label>
+        <input type="text" id="participantName" required>
+        <button type="submit">Add Participant</button>
+    </form>
+
+    <!-- Add Sample Form -->
+    <h2>Add Sample</h2>
+    <form id="addSampleForm">
+        <label for="sampleName">Sample Name:</label>
+        <input type="text" id="sampleName" required>
+        <label for="sampleCode">Sample Code:</label>
+        <input type="text" id="sampleCode" required>
+        <button type="submit">Add Sample</button>
+    </form>
+
+    <!-- Result Output -->
+    <h2>Result</h2>
+    <pre id="output">Waiting for submission...</pre>
+
+    <script>
+        const apiBaseUrl = 'http://localhost:8000/api/data';
+
+        // Handle Add Participant Form Submission
+        document.getElementById('addParticipantForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('participantName').value.trim();
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/participants`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+
+                const result = await response.json();
+                displayResult(result, response.ok ? "Participant added successfully!" : "Failed to add participant.");
+            } catch (error) {
+                displayError(error.message);
+            }
+        });
+
+        // Handle Add Sample Form Submission
+        document.getElementById('addSampleForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const name = document.getElementById('sampleName').value.trim();
+            const code = document.getElementById('sampleCode').value.trim();
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/samples`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, code }),
+                });
+
+                const result = await response.json();
+                displayResult(result, response.ok ? "Sample added successfully!" : "Failed to add sample.");
+            } catch (error) {
+                displayError(error.message);
+            }
+        });
+
+        // Display Result Function
+        const displayResult = (result, successMessage) => {
+            document.getElementById('output').textContent = JSON.stringify(result, null, 2);
+            alert(successMessage);
+        };
+
+        // Display Error Function
+        const displayError = (message) => {
+            document.getElementById('output').textContent = `Error: ${message}`;
+            alert(`Error: ${message}`);
+        };
+    </script>
+</body>
+</html>
