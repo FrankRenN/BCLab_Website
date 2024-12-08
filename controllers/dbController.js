@@ -2,6 +2,25 @@ const { queryTable, deleteFromTable, insertData, editTable } = require('../model
 
 const db = require('../models/db');
 
+// Create user
+const createUser = async (username, email, hashedPassword) => {
+    const sql = `INSERT INTO user (username, email, password) VALUES (?, ?, ?)`;
+    try {
+        const [result] = await db.query(sql, [username, email, hashedPassword]);
+        return { success: true, insertId: result.insertId };
+    } catch (error) {
+        console.error("Error creating user:", error);
+        throw new Error("Failed to create user");
+    }
+};
+
+// Find user by email
+const findUserByEmail = async (email) => {
+    const sql = `SELECT * FROM user WHERE email = ?`;
+    const [result] = await db.query(sql, [email]);
+    return result.length ? result[0] : null;
+};
+
 // query by pages
 const getPaginatedData = async (req, res, next) => {
     const { tableName } = req.params;
@@ -88,5 +107,6 @@ const editRecord = async (tableName, id, fields) => {
 };
 
 module.exports = {
-    getPaginatedData, deleteData, createRun, createExperiment, addComputer, addMinion, editRecord
+    getPaginatedData, deleteData, createRun, createExperiment, addComputer, addMinion, editRecord,
+    createUser, findUserByEmail
 };
