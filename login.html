@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Send Verification Code</title>
+    <title>Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -20,12 +20,14 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             width: 400px;
+            text-align: center;
         }
         h2 {
-            text-align: center;
+            margin-bottom: 1em;
         }
         .form-group {
             margin-bottom: 1.5em;
+            text-align: left;
         }
         label {
             display: block;
@@ -53,53 +55,67 @@
         }
         .message {
             margin-top: 1em;
-            text-align: center;
             font-weight: bold;
-            color: #333;
+        }
+        .message.success {
+            color: green;
+        }
+        .message.error {
+            color: red;
         }
     </style>
 </head>
 <body>
 
 <div class="form-container">
-    <h2>Test Email Verification</h2>
-    <form id="verificationForm">
+    <h2>Login</h2>
+    <form id="loginForm">
         <div class="form-group">
             <label for="email">Email Address</label>
             <input type="email" id="email" placeholder="Enter your email" required>
         </div>
-        <button type="submit">Send Verification Code</button>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" required>
+        </div>
+        <button type="submit">Login</button>
     </form>
+    <button id="registerBtn">Register</button>
     <div id="message" class="message"></div>
 </div>
 
 <script>
-document.getElementById("verificationForm").addEventListener("submit", async (e) => {
-    e.preventDefault(); // Prevent form refresh
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); 
 
-    const email = document.getElementById("email").value;
-
-    // Basic email validation
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
-        alert("Please enter a valid email address.");
-        return;
-    }
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const messageEl = document.getElementById("message");
 
     try {
-        const response = await fetch("http://localhost:8000/api/data/register/send_email", {
+        const response = await fetch("http://localhost:8000/api/data/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({ email, password }),
         });
 
         const result = await response.json();
-        
-        // Display server response
-        document.getElementById("message").innerText = result.message || "Verification code sent successfully!";
+
+        if (response.ok && result.success) {
+            messageEl.textContent = result.message || "Login successful!";
+            messageEl.classList.add("success");
+            window.location.href = "dashboard.html"; 
+        } else {
+            throw new Error(result.message || "Login failed.");
+        }
     } catch (error) {
-        console.error("Failed to send verification code:", error);
-        document.getElementById("message").innerText = "Error sending verification code.";
+        messageEl.textContent = error.message;
+        messageEl.classList.add("error");
     }
+});
+
+document.getElementById("registerBtn").addEventListener("click", () => {
+    window.location.href = "verification.html";
 });
 </script>
 

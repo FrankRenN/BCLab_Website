@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Operator</title>
+</head>
+<body>
+
+<h2>Add Operator</h2>
+<form id="operatorForm">
+    <label>Role:</label>
+    <input type="text" id="role" required><br><br>
+
+    <label>Participant Name:</label>
+    <select id="participant_id" required>
+        <option value="" disabled selected>Select a participant</option>
+    </select><br><br>
+
+    <label>Run ID:</label>
+    <input type="number" id="run_id" required><br><br>
+
+    <button type="submit">Add Operator</button>
+</form>
+
+<script>
+// Load participants from the database
+async function loadParticipants() {
+    try {
+        const response = await fetch("http://localhost:8000/api/data/participant");
+        
+        if (!response.ok) {
+            throw new Error("Failed to load participants");
+        }
+
+        const participants = await response.json();
+
+        const participantSelect = document.getElementById("participant_id");
+
+        // Clear previous options if any
+        participantSelect.innerHTML = `<option value="" disabled selected>Select a participant</option>`;
+
+        // Populate the select dropdown
+        participants.forEach(participant => {
+            const option = document.createElement("option");
+            option.value = participant.id;  // Use participant's actual ID from the database
+            option.textContent = participant.name;  // Display participant's name
+            participantSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Error loading participants:", error);
+        alert("Failed to load participants.");
+    }
+}
+
+// Handle form submission
+document.getElementById("operatorForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const role = document.getElementById("role").value.trim();
+    const participant_id = document.getElementById("participant_id").value;
+    const run_id = document.getElementById("run_id").value;
+
+    try {
+        const response = await fetch("http://localhost:8000/api/data/operator", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role, participant_id, run_id }),
+        });
+
+        const result = await response.json();
+        alert(result.message || "Operator added successfully!");
+    } catch (error) {
+        console.error("Error adding operator:", error);
+        alert("Failed to add operator.");
+    }
+});
+
+// Load participants on page load
+window.onload = loadParticipants;
+</script>
+
+</body>
+</html>

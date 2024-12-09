@@ -3,10 +3,10 @@ const { queryTable, deleteFromTable, insertData, editTable } = require('../model
 const db = require('../models/db');
 
 // Create user
-const createUser = async (username, email, hashedPassword) => {
-    const sql = `INSERT INTO user (username, email, password) VALUES (?, ?, ?)`;
+const createUser = async (email, hashedPassword) => {
+    const sql = `INSERT INTO user (email, password) VALUES (?, ?)`;
     try {
-        const [result] = await db.query(sql, [username, email, hashedPassword]);
+        const [result] = await db.query(sql, [email, hashedPassword]);
         return { success: true, insertId: result.insertId };
     } catch (error) {
         console.error("Error creating user:", error);
@@ -17,8 +17,13 @@ const createUser = async (username, email, hashedPassword) => {
 // Find user by email
 const findUserByEmail = async (email) => {
     const sql = `SELECT * FROM user WHERE email = ?`;
-    const [result] = await db.query(sql, [email]);
-    return result.length ? result[0] : null;
+    try {
+        const [rows] = await db.query(sql, [email]);
+        return rows[0];
+    } catch (error) {
+        console.error("Error finding user by email:", error);
+        throw new Error("Failed to find user");
+    }
 };
 
 // query by pages
@@ -61,13 +66,6 @@ const getColumns = async (req, res, next) => {
         console.error(`Error fetching columns for ${tableName}: ${error.message}`);
         res.status(500).send({ error: 'Failed to get column names' });
     }
-};
-
-
-// get column names show them on page
-const getColumnNames = async (tableName) => {
-    const [columns] = await db.query(`SHOW COLUMNS FROM ??`, [tableName]);
-    return columns.map(col => col.Field).join(', ');
 };
 
 // delete data
@@ -139,6 +137,43 @@ const addSample = async (name, code) => {
     });
 };
 
+const addOperator = async (role, participant_id, run_id) => {
+    return await insertData('operator', {
+        role,
+        participant_id,
+        run_id,
+    });
+};
+
+const addBarcode = async (sample_name, barcode, run_id) => {
+    return await insertData('barcode', {
+        sample_name,
+        barcode,
+        run_id,
+    });
+};
+
+const addSequencing_unit = async (type, code, pores_start, pores_after, date, run_id) => {
+    return await insertData('sequencing_unit', {
+        type,
+        code,
+        pores_start,
+        pores_after,
+        date,
+        run_id,
+    });
+};
+
+const addLibrary_prep = async (prep_kit, date_opened, sample_num, owner, run_id) => {
+    return await insertData('library_prep', {
+        prep_kit,
+        date_opened,
+        sample_num,
+        owner,
+        run_id,
+    });
+};
+
 //edit table record
 const editRecord = async (tableName, id, fields) => {
     return await editTable(tableName, id, fields);
@@ -147,5 +182,6 @@ const editRecord = async (tableName, id, fields) => {
 
 module.exports = {
     getPaginatedData, deleteData, createRun, createExperiment, addComputer, addMinion, editRecord,
-    createUser, findUserByEmail, getColumns, addParticipant, addSample
+    createUser, findUserByEmail, getColumns, addParticipant, addSample, addBarcode, addLibrary_prep,
+    addOperator, addSequencing_unit
 };

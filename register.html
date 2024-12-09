@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Register</h2>
+    <form id="registerForm">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" required>
+
+        <button type="submit">Register</button>
+    </form>
+    <div id="message" class="message"></div>
+</div>
+
+<script>
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // 获取输入数据
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    try {
+        const response = await fetch("http://localhost:8000/api/data/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
+
+        const result = await response.json();
+
+        // 成功或失败消息
+        if (result.success) {
+            alert("Registered successfully!");
+            window.location.href = "login.html";  // 跳转到登录页面
+        } else {
+            alert(result.message || "Registration failed.");
+        }
+    } catch (error) {
+        console.error("Registration failed:", error);
+    }
+});
+</script>
+</body>
+</html>

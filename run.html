@@ -47,16 +47,32 @@
         const experimentId = urlParams.get('experimentId');
 
         if (experimentId) {
-            experimentHeader.textContent = `Experiment ID: ${experimentId}`;
-            fetchRuns(experimentId);
+            fetchExperimentName(experimentId);  // Fetch experiment name
+            fetchRuns(experimentId);           // Fetch runs for experiment
         } else {
             experimentHeader.textContent = 'No Experiment ID Found';
+        }
+
+        // Fetch experiment name from the database
+        async function fetchExperimentName(experimentId) {
+            try {
+                const response = await fetch(`http://localhost:8000/api/data/experiment/${experimentId}`);
+                const experiment = await response.json();
+
+                if (response.ok && experiment && experiment.name) {
+                    experimentHeader.textContent = `experiment: ${experiment.name}`;
+                } else {
+                    experimentHeader.textContent = 'Experiment Name Not Found';
+                }
+            } catch (error) {
+                experimentHeader.textContent = `Error: ${error.message}`;
+            }
         }
 
         // Fetch and display runs matching the experiment ID
         async function fetchRuns(experimentId) {
             try {
-                const response = await fetch('http://localhost:8000/api/data/run');
+                const response = await fetch("http://localhost:8000/api/data/run");
                 const allRuns = await response.json();
 
                 if (response.ok) {
