@@ -6,7 +6,6 @@
     <title>Register</title>
 </head>
 <body>
-
 <div class="form-container">
     <h2>Register</h2>
     <form id="registerForm">
@@ -25,7 +24,6 @@
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // 获取输入数据
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
 
@@ -37,11 +35,8 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
         });
 
         const result = await response.json();
-
-        // 成功或失败消息
         if (result.success) {
             alert("Registered successfully!");
-            window.location.href = "login.html";  // 跳转到登录页面
         } else {
             alert(result.message || "Registration failed.");
         }

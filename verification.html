@@ -23,7 +23,7 @@
 document.getElementById("sendCodeBtn").addEventListener("click", async () => {
     const email = document.getElementById("email").value.trim();
     try {
-        const response = await fetch("http://localhost:8000/api/data/register/send_email", {
+        const response = await fetch("http://localhost:8000/api/data/verification/send_email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email }),
@@ -41,7 +41,7 @@ document.getElementById("verificationForm").addEventListener("submit", async (e)
     const vercode = document.getElementById("vercode").value.trim();
 
     try {
-        const response = await fetch("http://localhost:8000/api/data/register", {
+        const response = await fetch("http://localhost:8000/api/data/verification", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, vercode, password: "temp" }),

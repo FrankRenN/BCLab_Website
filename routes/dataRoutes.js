@@ -57,6 +57,23 @@ const sendVerificationEmail = async (email, code) => {
     await transporter.sendMail(mailOptions);
 };
 
+router.post('/verification', async (req, res, next) => {
+    const { email, vercode } = req.body;
+
+    try {
+
+        const storedCode = await client.get(`email_code:${email}`);
+        if (storedCode !== vercode) {
+            return res.status(400).send({ success: false, message: 'Invalid verification code' });
+        }
+
+        res.status(200).send({ success: true, message: 'Verification successful' });
+    } catch (error) {
+        console.error("Verification error:", error);
+        next(error);
+    }
+});
+
 /**
  * Endpoint to send a verification code to the user's email.
  * 
@@ -64,7 +81,7 @@ const sendVerificationEmail = async (email, code) => {
  * @param {string} email - User's email address.
  * @returns {object} Success or failure message.
  */
-router.post('/register/send_email', async (req, res, next) => {
+router.post('/verification/send_email', async (req, res, next) => {
     const { email } = req.body;
     const code = Math.floor(100000 + Math.random() * 900000);  // Generate a six-digit code
 
@@ -99,56 +116,51 @@ process.on('SIGINT', async () => {
 
 //================================ User Registration and Login Endpoints ===================================
 
-// Register a new user by email and password
 router.post('/register', async (req, res, next) => {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+        return res.status(400).send({ success: false, message: 'Email and password are required.' });
+    }
+
     try {
-        // Check if the user already exists in the database
         const existingUser = await findUserByEmail(email);
         if (existingUser) {
-            return res.status(400).send({ success: false, message: 'User already exists' });
+            return res.status(400).send({ success: false, message: 'User already exists.' });
         }
 
-        // Hash the user's password for secure storage
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Save the new user record in the database
-        const result = await createUser(email, hashedPassword);
+        const result = await createUser(email, password);
 
         res.status(201).send({
             success: true,
-            message: 'Registered successfully',
-            userId: result.insertId
+            message: 'User registered successfully.',
+            userId: result.insertId,
         });
     } catch (error) {
-        console.error("Registration error:", error);
-        next(error);  // Forward the error to the global error handler
+        console.error('Registration error:', error);
+        res.status(500).send({ success: false, message: 'Failed to register user.' });
     }
 });
+
 
 // Authenticate a user and return a JWT token upon successful login
 router.post('/login', async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
-        // Look up the user in the database by email
         const user = await findUserByEmail(email);
         if (!user) {
             return res.status(400).send({ success: false, message: 'User does not exist' });
         }
 
-        // Compare the provided password with the stored hashed password
-        const isValid = await bcrypt.compare(password, user.password);
-        if (!isValid) {
+        if (password !== user.password) {
             return res.status(400).send({ success: false, message: 'Incorrect password' });
         }
 
-        // Generate a JWT token for the authenticated user
         const token = jwt.sign(
             { userId: user.id, email: user.email },
             process.env.JWT_SECRET,
-            { expiresIn: '1h' }  // Token expires in 1 hour
+            { expiresIn: '1h' }
         );
 
         res.status(200).send({
@@ -158,7 +170,7 @@ router.post('/login', async (req, res, next) => {
         });
     } catch (error) {
         console.error("Login error:", error);
-        next(error);  // Forward the error to the global error handler
+        next(error);
     }
 });
 
